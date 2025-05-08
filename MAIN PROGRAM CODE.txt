@@ -1,0 +1,537 @@
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import seaborn as sns 
+from sklearn.model_selection import train_test_split 
+from sklearn.tree import DecisionTreeClassifier 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn import svm 
+from sklearn import metrics 
+from sklearn.metrics import accuracy_score,confusion_matrix, classification_report 
+import warnings 
+from sklearn.naive_bayes import GaussianNB 
+from sklearn.neighbors import KNeighborsClassifier 
+warnings.filterwarnings('ignore') 
+from threading import Condition 
+import telepot 
+import RPi.GPIO as GPIO 
+import time 
+import Adafruit_DHT 
+import Adafruit_MCP3008 
+import io 
+import logging 
+import socketserver 
+from threading import Condition 
+from http import server 
+import picamera 
+GPIO.setmode(GPIO.BCM) 
+GPIO.setwarnings(False) 
+DHT_sensor = Adafruit_DHT.DHT11 
+mcp = Adafruit_MCP3008.MCP3008(clk=11,miso=9,mosi=10,cs=8) 
+soil_moisture_channel = 1 
+ldr_channel = 0 
+dataset = pd.read_csv('/home/raspberrypi/Desktop/crop robo/agriculture_data1.csv') 
+print(dataset.head()) 
+print(dataset.shape) 
+print(dataset.describe()) 
+print(dataset.isna().sum()) 
+x = dataset.drop('result',axis=1) 
+y= dataset['result'] 
+print(x) 
+print(y) 
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=20) 
+print(x.shape,x_train.shape,y_train.shape) 
+model = RandomForestClassifier() 
+model.fit(x_train,y_train) 
+X_train_prediction = model.predict(x_train) 
+train_data_accuracy= accuracy_score(X_train_prediction,y_train) 
+print('accuracy score for RFC train data:',train_data_accuracy*100) 
+X_test_prediction = model.predict(x_test) 
+test_data_accuracy= accuracy_score(X_test_prediction,y_test) 
+print('accuracy score for RFC test data:',test_data_accuracy*100) 
+# Confusion matrix and classification report for RFC 
+conf_matrix_rfc = confusion_matrix(y_test, X_test_prediction) 
+print("Confusion Matrix for RFC:\n", conf_matrix_rfc) 
+model = DecisionTreeClassifier() 
+model.fit(x_train,y_train) 
+X_train_prediction = model.predict(x_train) 
+train_data_accuracy= accuracy_score(X_train_prediction,y_train) 
+print('accuracy score for DTC train data:',train_data_accuracy*100) 
+X_test_prediction = model.predict(x_test) 
+test_data_accuracy= accuracy_score(X_test_prediction,y_test) 
+print('accuracy score for DTC test data:',test_data_accuracy*100) 
+# Confusion matrix and classification report for RFC 
+conf_matrix_dtc = confusion_matrix(y_test, X_test_prediction) 
+print("Confusion Matrix for DTC:\n", conf_matrix_dtc) 
+model = GaussianNB() 
+model.fit(x_train,y_train) 
+X_train_prediction = model.predict(x_train) 
+train_data_accuracy= accuracy_score(X_train_prediction,y_train) 
+print('accuracy score for GNB train data:',train_data_accuracy*100) 
+X_test_prediction = model.predict(x_test) 
+test_data_accuracy= accuracy_score(X_test_prediction,y_test) 
+print('accuracy score for GNB test data:',test_data_accuracy*100) 
+# Confusion matrix and classification report for RFC 
+conf_matrix_nb = confusion_matrix(y_test, X_test_prediction) 
+print("Confusion Matrix for NB:\n", conf_matrix_nb) 
+model = KNeighborsClassifier(n_neighbors=5) 
+model.fit(x_train,y_train) 
+X_train_prediction = model.predict(x_train) 
+train_data_accuracy= accuracy_score(X_train_prediction,y_train) 
+print('accuracy score for KNN train data:',train_data_accuracy*100) 
+X_test_prediction = model.predict(x_test) 
+test_data_accuracy= accuracy_score(X_test_prediction,y_test) 
+print('accuracy score for KNN test data:',test_data_accuracy*100) 
+# Confusion matrix and classification report for RFC 
+conf_matrix_knn = confusion_matrix(y_test, X_test_prediction) 
+print("Confusion Matrix for KNN:\n", conf_matrix_knn) 
+model = svm.SVC(kernel='linear') 
+model.fit(x_train,y_train) 
+X_train_prediction = model.predict(x_train) 
+train_data_accuracy= accuracy_score(X_train_prediction,y_train) 
+print('accuracy score for svm train data:',train_data_accuracy*100) 
+X_test_prediction = model.predict(x_test) 
+test_data_accuracy= accuracy_score(X_test_prediction,y_test) 
+print('accuracy score for svm test data:',test_data_accuracy*100) 
+# Confusion matrix and classification report for RFC 
+conf_matrix_svm = confusion_matrix(y_test, X_test_prediction) 
+print("Confusion Matrix for svm:\n", conf_matrix_svm) 
+# Define Classifier names and their corresponding test accuracies 
+classifier_names=['RFC','DTC','NB','SVM','KNN'] 
+train_accuracies=[100.0,100.0,95.2,99.9,82.6] 
+test_accuracies=[99.9,99.9,95.2,99.3,57.3] 
+# Visualize confusion matrix for RFC 
+plt.figure(figsize=(8, 6)) 
+sns.heatmap(conf_matrix_rfc, annot=True, fmt='d', cmap='Blues', xticklabels=['No', 'Yes'], 
+yticklabels=['No', 'Yes']) 
+plt.title('Confusion Matrix for RFC') 
+plt.xlabel('Predicted') 
+plt.ylabel('Actual') 
+plt.show() 
+# Visualize confusion matrix for DTC 
+plt.figure(figsize=(8, 6)) 
+sns.heatmap(conf_matrix_dtc, annot=True, fmt='d', cmap='Blues', xticklabels=['No', 'Yes'], 
+yticklabels=['No', 'Yes']) 
+plt.title('Confusion Matrix for DTC') 
+plt.xlabel('Predicted') 
+plt.ylabel('Actual') 
+plt.show() 
+# Visualize confusion matrix for GNB 
+plt.figure(figsize=(8, 6)) 
+sns.heatmap(conf_matrix_nb, annot=True, fmt='d', cmap='Blues', xticklabels=['No', 'Yes'], 
+yticklabels=['No', 'Yes']) 
+plt.title('Confusion Matrix for GNB') 
+plt.xlabel('Predicted') 
+plt.ylabel('Actual') 
+plt.show() 
+# Visualize confusion matrix for SVM 
+plt.figure(figsize=(8, 6)) 
+sns.heatmap(conf_matrix_svm, annot=True, fmt='d', cmap='Blues', xticklabels=['No', 'Yes'], 
+yticklabels=['No', 'Yes']) 
+plt.title('Confusion Matrix for SVM') 
+plt.xlabel('Predicted') 
+plt.ylabel('Actual') 
+plt.show() 
+# Plotting data using matplotlib 
+plt.figure(figsize=(10,6)) 
+width=0.35 
+x=range(len(classifier_names)) 
+plt.bar(x,train_accuracies,width,label='training Accuracy',alpha=0.7) 
+plt.bar([i+width for i in x],test_accuracies,width,label='Testing Accuracy',alpha=0.7) 
+plt.xlabel('Classifiers') 
+plt.ylabel('Accuracy(%)') 
+plt.title('Classifier training and Testing Accuracy Comparision') 
+plt.xticks([i+width/2 for i in x],classifier_names) 
+plt.ylim(0,100) # Set the y-axis limit to 0-100% 
+plt.legend() 
+plt.tight_layout() 
+# Show the plot 
+plt.show() 
+import RPi.GPIO as GPIO 
+from pynput import keyboard 
+from time import sleep 
+GPIO.setmode(GPIO.BCM) 
+GPIO.setwarnings(False) 
+m1_1 = 24 
+m1_2 = 23 
+m2_1 = 18 
+m2_2 = 15 
+GPIO.setup(m1_1, GPIO.OUT) 
+GPIO.setup(m1_2, GPIO.OUT) 
+GPIO.setup(m2_1, GPIO.OUT) 
+GPIO.setup(m2_2, GPIO.OUT) 
+def stop(): 
+GPIO.output(m1_1, GPIO.LOW) 
+GPIO.output(m1_2, GPIO.LOW) 
+GPIO.output(m2_1, GPIO.LOW) 
+GPIO.output(m2_2, GPIO.LOW) 
+def back(): 
+GPIO.output(m1_1, GPIO.HIGH) 
+GPIO.output(m1_2, GPIO.LOW) 
+GPIO.output(m2_1, GPIO.HIGH) 
+GPIO.output(m2_2, GPIO.LOW) 
+def front(): 
+GPIO.output(m1_1, GPIO.LOW) 
+GPIO.output(m1_2, GPIO.HIGH) 
+GPIO.output(m2_1, GPIO.LOW) 
+GPIO.output(m2_2, GPIO.HIGH) 
+def left(): 
+GPIO.output(m1_1, GPIO.LOW) 
+GPIO.output(m1_2, GPIO.HIGH) 
+GPIO.output(m2_1, GPIO.HIGH) 
+GPIO.output(m2_2, GPIO.LOW) 
+def right(): 
+GPIO.output(m1_1, GPIO.HIGH) 
+GPIO.output(m1_2, GPIO.LOW) 
+GPIO.output(m2_1, GPIO.LOW) 
+GPIO.output(m2_2, GPIO.HIGH) 
+def data(): 
+GPIO.setup(26,GPIO.IN) 
+PIR = GPIO.input(26) 
+bot_token = '5708855123:AAGG9njJfp-uolXAOeN86vhnxffvdc2dPlI' 
+user_chat_id = '5255217733' 
+if PIR: 
+message='MOTION DETECTED' 
+telegram_bot = telepot.Bot(bot_token) 
+telegram_bot.sendMessage(user_chat_id,message) 
+time.sleep(2)      
+else: 
+message=' NO MOTION DETECTED' 
+telegram_bot = telepot.Bot(bot_token) 
+telegram_bot.sendMessage(user_chat_id,message) 
+time.sleep(2) 
+return(message) 
+# HTML page with embedded JavaScript 
+PAGE =  
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title>Raspberry Pi - agriculture</title> 
+</head> 
+<style> 
+.sensor-container { 
+display: flex; 
+justify-content: flex-start; /* Align boxes from left to right */ 
+gap: 20px; /* Space between boxes */ 
+} 
+.sensor-box { 
+border: 2px solid #ccc; 
+padding: 10px; 
+height: 70px; 
+width: 285px; 
+background-color: lightblue; 
+border-radius: 10px; 
+} 
+h4 { 
+color: red; 
+} 
+/* Define a CSS class for the button containers */ 
+.button-container { 
+background-color: #f0f0f0; /* Background color for the containers */ 
+border: 1px solid #ccc; /* Border for the containers */ 
+padding: 20px; /* Padding for the containers */ 
+margin-bottom: 20px; /* Margin between the containers */ 
+border-radius: 10px; 
+width: 200px; 
+display: inline-block; 
+vertical-align: top; 
+} 
+/* Define a CSS class for the buttons */ 
+.custom-button { 
+background-color: green; /* Change this to your desired color */ 
+color: #ffffff; /* Text color */ 
+border: none; 
+padding: 10px; /* Adjust padding as needed */ 
+cursor: pointer; 
+border: 2px solid #ccc; 
+border-radius: 10px; 
+height: 75px; 
+width: 75px; 
+} 
+/* Define a CSS class for the buttons on hover (optional) */ 
+.custom-button:hover { 
+background-color: #0056b3; /* Change this to your desired hover color */ 
+} 
+.custom-image 
+</style> 
+<body style="background-color: white;"> <!-- Change the background color here --> 
+<center> 
+<h1>agriculture</h1> 
+<img src="stream.mjpg" width="980" height="450">  
+<div id="response_message"></div> 
+</center> 
+<button class="custom-button" onclick="sendCommand('FRONT')">Front</button> 
+<button class="custom-button" onclick="sendCommand('BACK')">Back</button> 
+<button class="custom-button" onclick="sendCommand('LEFT')">Left</button> 
+<button class="custom-button" onclick="sendCommand('RIGHT')">Right</button> 
+<button class="custom-button" onclick="sendCommand('STOP')">Stop</button> 
+<div id="response_message"></div> 
+<div class="sensor-container"> 
+<div class="sensor-box"> 
+<h4><div id="temperature">Temperature: ??</div></h4> 
+</div> 
+<div class="sensor-box"> 
+<h4><div id="humidity">humidity value: ??</div></h4> 
+</div> 
+<div class="sensor-box"> 
+<h4><div id="soil_value"> soil Value: ??</div></h4> 
+</div> 
+<div class="sensor-box"> 
+<h4><div id="ldr_value">ldr Value: ??</div></h4> 
+</div> 
+</div> 
+<h4><div id="response_data">STATUS: ??</div></h4> 
+<title>DHT11 Sensor Data</title> 
+<script> 
+function fetchDataAndUpdate() { 
+fetch('/get_temperature') 
+.then(response => response.text()) 
+.then(temp => { 
+document.getElementById("temperature").innerText = Temperature: ${temp} C; 
+});  
+fetch('/get_humidity') 
+.then(response => response.text()) 
+.then(humidity => { 
+document.getElementById("humidity").innerText = `humidity value: ${humidity} 
+`; 
+}); 
+fetch('/get_soil_value') 
+.then(response => response.text()) 
+.then(soilvalue => { 
+document.getElementById("soil_value").innerText = soil Value: ${soilvalue}; 
+}); 
+fetch('/get_ldr_value') 
+.then(response => response.text()) 
+.then(ldrvalue => { 
+document.getElementById("ldr_value").innerText = ldr Value: ${ldrvalue}; 
+}); 
+fetch('/response_data') 
+.then(response => response.text()) 
+.then(status => { 
+document.getElementById("response_data").innerText = STATUS: ${status}; 
+}); 
+} 
+function sendCommand(command) { 
+var xhr = new XMLHttpRequest(); 
+xhr.open("POST", "/", true); 
+xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded"); 
+xhr.send("submit=" + command); 
+} 
+fetchDataAndUpdate(); 
+setInterval(fetchDataAndUpdate, 10000); 
+</script> 
+</body> 
+</html> 
+class StreamingOutput(object): 
+def init(self): 
+self.frame = None 
+self.buffer = io.BytesIO() 
+self.condition = Condition() 
+def write(self, buf): 
+if buf.startswith(b'\xff\xd8'): 
+self.buffer.truncate() 
+with self.condition: 
+self.frame = self.buffer.getvalue() 
+self.condition.notify_all() 
+self.buffer.seek(0) 
+return self.buffer.write(buf) 
+class StreamingHandler(server.BaseHTTPRequestHandler): 
+def do_GET(self): 
+if self.path == '/': 
+self.send_response(301) 
+self.send_header('Location', '/index.html') 
+self.end_headers() 
+elif self.path == '/index.html': 
+content = PAGE.encode('utf-8') 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/html') 
+self.send_header('Content-Length', len(content)) 
+self.end_headers() 
+self.wfile.write(content) 
+elif self.path == '/stream.mjpg': 
+self.send_response(200) 
+self.send_header('Age', 0) 
+self.send_header('Cache-Control', 'no-cache, private') 
+self.send_header('Pragma', 'no-cache') 
+self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME') 
+self.end_headers() 
+try: 
+while True: 
+with output.condition: 
+output.condition.wait() 
+frame = output.frame 
+self.wfile.write(b'--FRAME\r\n') 
+self.send_header('Content-Type', 'image/jpeg') 
+self.send_header('Content-Length', len(frame)) 
+self.end_headers() 
+self.wfile.write(frame) 
+self.wfile.write(b'\r\n') 
+except Exception as e: 
+logging.error(f"Error in video stream: {e}")   
+elif self.path == '/get_soil_value': 
+soil_value = mcp.read_adc(1) 
+soil_value = str(soil_value) 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/plain') 
+self.send_header('Content-Length', len(soil_value)) 
+self.end_headers() 
+self.wfile.write(soil_value.encode('utf-8')) 
+elif self.path == '/get_ldr_value': 
+ldr_value = mcp.read_adc(0) 
+ldr_value = str(ldr_value) 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/plain') 
+self.send_header('Content-Length', len(ldr_value)) 
+self.end_headers() 
+self.wfile.write(ldr_value.encode('utf-8')) 
+elif self.path == '/get_temperature': 
+humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11,21) 
+temperature = str(temperature) 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/plain') 
+self.send_header('Content-Length', len(temperature)) 
+self.end_headers() 
+self.wfile.write(temperature.encode('utf-8')) 
+elif self.path == '/get_humidity': 
+humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, 21) 
+humidity = str(humidity) 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/plain') 
+self.send_header('Content-Length', len(humidity)) 
+self.end_headers() 
+self.wfile.write(humidity.encode('utf-8')) 
+elif self.path == '/response_data': 
+#temperature_fahrenheit = sensor.get_temperature(Unit.DEGREES_F) 
+humidity,temperature = Adafruit_DHT.read(Adafruit_DHT.DHT11, 21)  
+soil_value = mcp.read_adc(1) 
+ldr_value = mcp.read_adc(0)  
+new_data=[] 
+if temperature is not None: 
+print("temperature is none") 
+temperature= float(temperature) 
+soil_moisture_value=float(soil_value) 
+humidity_value=float(humidity) 
+ldr_value=float(ldr_value) 
+new_data.append([soil_moisture_value,ldr_value,temperature,humidity]) 
+if len(new_data)>0: 
+predictions = model.predict(new_data) 
+result=predictions[-1] 
+if result == 0:                 
+#situation = 'all conditions are good' 
+response_data = 'wheat is best to cultivate' 
+data()   
+elif result == 1: 
+#situation = 'soil,light & temperature conditions are good \n check the 
+humidity condition' 
+response_data = 'wheat is best to cultivate' 
+data() 
+elif result == 2: 
+#situation = 'soil,light,humidity conditions are good \n check the temperature 
+condition' 
+response_data = 'water melon & maize are best to cultivate' 
+data() 
+elif result == 3: 
+#situation = 'soil & light conditions are good, check the temperature and 
+humidity conditions' 
+response_data = 'Rice & sugarcane are best to cultivate' 
+elif result == 4: 
+#situation = 'soil,temperature & humidity are good,check the light condition' 
+response_data = 'wheat is best to cultivate' 
+data() 
+elif result == 5: 
+#situation = 'soil,temperature are good,check the light & humidity conditions' 
+response_data = 'wheat is best to cultivate' 
+data() 
+elif result == 6: 
+#situation = 'soil & humidity are good, check the light & temperature 
+conditions' 
+response_data = 'watermelon is best to cultivate' 
+data() 
+elif result == 7: 
+#situation = 'soil is good,check the humidity,temperature & light conditions' 
+response_data = 'Rice & sugarcane are best to cultivate' 
+data() 
+elif result == 8: 
+#situation = 'light,temperature & humidity conditions are good, check the soil 
+condition' 
+response_data = 'cotton is best to cultivate' 
+data()  
+elif result == 9: 
+#situation = 'light & temperature conditions are good, check the soil & 
+humidity conditions' 
+response_data = 'wheat is best to cultivate' 
+data()  
+elif result == 10: 
+#situation = 'light & humidity are good, check the soil & temperature 
+conditions' 
+conditions' 
+response_data = 'Maize & cotton are the best for cultivate' 
+data() 
+elif result == 11: 
+#situation = 'light condition is good,check the soil,temperature &humidity 
+response_data = 'Rice & sugarcane are best to cultivate' 
+data() 
+elif result == 12: 
+#situation = 'temperature & humidity conditions are good, check the soil & 
+light conditions' 
+response_data = 'Tomatoes & Soybeans are best to cultivate' 
+data() 
+elif result == 13: 
+#situation = 'temperature is good, check the soil,light & humidity conditions' 
+response_data = 'wheat is best to cultivate' 
+data() 
+elif result == 14: 
+#situation = 'humidity condition is good, check the soil,temperature & light 
+conditions' 
+else: 
+response_data = 'wheat is best to cultivate' 
+data() 
+elif result == 15: 
+#situation = 'please check the all conditions' 
+response_data = 'Rice & sugarcane are best to cultivate' 
+data() 
+else: 
+response_data='Please check the sensor' 
+data() 
+response_data='temperature is none' 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/plain') 
+self.send_header('Content-Length', len(response_data)) 
+self.end_headers() 
+self.wfile.write(response_data.encode('utf-8')) 
+def do_POST(self): 
+global Angle  # Declare Angle as a global variable 
+if self.path == '/': 
+content_length = int(self.headers['Content-Length']) 
+post_data = self.rfile.read(content_length).decode('utf-8') 
+if "submit=RIGHT" in post_data: 
+right() 
+elif "submit=LEFT" in post_data: 
+left() 
+elif "submit=FRONT" in post_data: 
+front() 
+elif "submit=BACK" in post_data: 
+back() 
+elif "submit=STOP" in post_data: 
+stop() 
+self.send_response(200) 
+self.send_header('Content-Type', 'text/plain') 
+self.end_headers() 
+class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer): 
+allow_reuse_address = True 
+daemon_threads = True 
+try: 
+with picamera.PiCamera(resolution='640x480', framerate=24) as camera: 
+output = StreamingOutput() 
+camera.start_recording(output, format='mjpeg') 
+try: 
+address = ('',5001) 
+server = StreamingServer(address, StreamingHandler) 
+server.serve_forever() 
+finally: 
+# Stop the camera recording and clean up 
+camera.stop_recording() 
+# Stop the servo motor and clean up GPIO 
+GPIO.cleanup() 
+except Exception as e: 
+logging.error(f"? An error occurred: {e}")
